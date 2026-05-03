@@ -47,23 +47,41 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'home';
                 </div>
             </div>
 
-        <?php elseif ($action == 'login'): ?>
-            <div class="form-box">
-                <h2>Log In</h2>
-                <form action="login_handler.php" method="POST">
-                    <select name="farm_id" required>
-                        <option value="" disabled selected>Select Your Farm</option>
-                        <option value="1">Green Valley Estate</option>
-                        <option value="2">Sunrise Fields</option>
-                    </select>
-                    <input type="text" name="login_id" placeholder="Login ID" required>
-                    <input type="password" name="password" placeholder="Password" required>
-                    <button type="submit" class="submit-btn">Enter Dashboard</button>
-                </form>
-                <p style="font-size: 0.9em; margin-top: 15px;">
-                    New here? <a href="Frontend.php?action=register" style="color:#4CAF50;">Create an account</a>
-                </p>
+       <?php elseif ($action == 'login'): ?>
+    <div class="form-box">
+        <h2>Log In</h2>
+
+        <!-- NEW: Error Message Block -->
+        <?php if (isset($_GET['error'])): ?>
+            <div style="background: #ffebee; color: #c62828; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.85em; border-left: 4px solid #c62828;">
+                <?php 
+                    if ($_GET['error'] == 'pending') echo "<strong>Access Denied:</strong> Your account is still pending approval from your Farmer.";
+                    if ($_GET['error'] == 'invalid') echo "<strong>Invalid Credentials:</strong> The password you entered is incorrect.";
+                    if ($_GET['error'] == 'notfound') echo "<strong>Not Found:</strong> We couldn't find an active account with that Login ID at this farm.";
+                ?>
             </div>
+        <?php endif; ?>
+
+        <form action="login_handler.php" method="POST">
+            <select name="farm_id" required>
+                <option value="" disabled selected>Select Your Farm</option>
+                <?php
+                // DYNAMIC FETCH: Get all farms from your database
+                $farmQuery = $conn->query("SELECT FarmID, FarmName FROM Farm");
+                while($farm = $farmQuery->fetch_assoc()) {
+                    echo "<option value='".$farm['FarmID']."'>".$farm['FarmName']."</option>";
+                }
+                ?>
+            </select>
+            <input type="text" name="login_id" placeholder="Login ID (e.g. ST26-001)" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit" class="submit-btn">Enter Dashboard</button>
+        </form>
+        
+        <p style="font-size: 0.9em; margin-top: 15px;">
+            New here? <a href="Frontend.php?action=register" style="color:#4CAF50;">Create an account</a>
+        </p>
+    </div>
 
        <?php elseif ($action == 'register'): ?>
     <div class="form-box">
