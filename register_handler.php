@@ -17,10 +17,10 @@ $message   = "";
 $msgClass  = "error"; // Default to error style
 
 // 2. Scenario A & C: User selected Farmer
+// --- STEP 2: ADMIN CHECK (Fixed Column Name) ---
 if ($role == 'farmer') {
     $farmNameInput = $_POST['farm_name_input'];
     
-    // Check if the Super Admin (You) registered this farm
     $stmt = $conn->prepare("SELECT FarmID FROM Farm WHERE FarmName = ?");
     $stmt->bind_param("s", $farmNameInput);
     $stmt->execute();
@@ -30,18 +30,16 @@ if ($role == 'farmer') {
         $farm = $result->fetch_assoc();
         $farmID = $farm['FarmID'];
         
-        // Check if an Admin already exists for this farm
-        $adminCheck = $conn->prepare("SELECT PersonID FROM Person WHERE FarmID = ? AND is_Admin = 1");
+        // Use UserID instead of PersonID here
+        $adminCheck = $conn->prepare("SELECT UserID FROM Person WHERE FarmID = ? AND is_Admin = 1");
         $adminCheck->bind_param("i", $farmID);
         $adminCheck->execute();
-        $adminResult = adminCheck->get_result();
+        $adminResult = $adminCheck->get_result();
         
         if ($adminResult->num_rows == 0) {
-            // First Farmer: Activate immediately + Make Admin + Generate ID
             $status = 'active';
             $isAdmin = 1;
             
-            // Generate Login ID: ST + Year + Sequence
             $countRes = $conn->query("SELECT COUNT(*) as total FROM Person");
             $countRow = $countRes->fetch_assoc();
             $nextNum  = str_pad($countRow['total'] + 1, 3, "0", STR_PAD_LEFT);
@@ -50,7 +48,6 @@ if ($role == 'farmer') {
             $message = "Success! Farm found. You are the Admin Farmer. Your ID is: <strong>$loginID</strong>";
             $msgClass = "success";
         } else {
-            // Not the first farmer: Pending approval
             $message = "Farm found! Registration sent to the primary farmer for approval.";
             $msgClass = "pending";
         }
@@ -58,20 +55,23 @@ if ($role == 'farmer') {
         $message = "Farm not found. Please ensure the Super Admin has registered your farm.";
     }
 
-// 3. Scenario B: User selected Employee
 } else {
+    // Scenario B: Employee
     $farmID = $_POST['existing_farm_id'];
     $message = "Registration successful! Please wait for your farmer to approve your account and assign your Login ID.";
     $msgClass = "pending";
 }
 
-// 4. Save to Database
+// --- STEP 4: SAVE TO DATABASE (Added 'role' column) ---
 if ($farmID) {
-    $insert = $conn->prepare("INSERT INTO Person (name, Email, pass, Login_ID, status, is_Admin, FarmID) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $insert->bind_param("sssssii", $fullName, $email, $password, $loginID, $status, $isAdmin, $farmID);
+    // Added 'role' to the column list and an extra '?'
+    $insert = $conn->prepare("INSERT INTO Person (name, Email, role, pass, Login_ID, status, is_Admin, FarmID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    
+    // Added 's' to the type string and added $role to the variables
+    $insert->bind_param("ssssssii", $fullName, $email, $role, $password, $loginID, $status, $isAdmin, $farmID);
     
     if (!$insert->execute()) {
-        $message = "System error: Could not save registration.";
+        $message = "System error: Could not save registration. " . $conn->error;
         $msgClass = "error";
     }
 }

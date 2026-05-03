@@ -1,12 +1,18 @@
 <?php
+session_start();
 require_once 'db_config.php';
 
-// FOR TESTING: We are pretending Farmer #1 is logged in.
-// Later, we will use $_SESSION['FarmID'] after building the login.
-$currentFarmID = 1; 
+// Security Check: If not logged in or not a farmer, kick them back to login
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'farmer') {
+    header("Location: Frontend.php?action=login");
+    exit();
+}
 
-// Fetch pending people for this specific farm
-$query = "SELECT PersonID, name, Email, role FROM Person WHERE FarmID = $currentFarmID AND status = 'pending'";
+$currentFarmID = $_SESSION['farm_id']; 
+$adminName     = $_SESSION['user_name'];
+
+// Fetch pending people for the logged-in admin's farm
+$query = "SELECT UserID, name, Email, role FROM Person WHERE FarmID = $currentFarmID AND status = 'pending'";
 $pendingUsers = $conn->query($query);
 ?>
 
@@ -62,8 +68,8 @@ $pendingUsers = $conn->query($query);
                         <small><?php echo $row['Email']; ?></small>
                     </div>
                     <div>
-                        <a href="approve_handler.php?id=<?php echo $row['PersonID']; ?>&action=accept" class="btn-approve">Accept</a>
-                        <a href="approve_handler.php?id=<?php echo $row['PersonID']; ?>&action=reject" class="btn-reject">Reject</a>
+                        <a href="approve_handler.php?id=<?php echo $row['UserID']; ?>&action=accept" class="btn-approve">Accept</a>
+                        <a href="approve_handler.php?id=<?php echo $row['UserID']; ?>&action=reject" class="btn-reject">Reject</a>
                     </div>
                 </div>
             <?php endwhile; ?>
