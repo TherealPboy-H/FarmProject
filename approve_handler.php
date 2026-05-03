@@ -12,7 +12,7 @@ if ($action == 'accept') {
     $newLoginID = "ST26-" . $nextNum;
 
     // 2. Update the user to Active and give them their ID
-    $stmt = $conn->prepare("UPDATE Person SET status = 'active', Login_ID = ? WHERE PersonID = ?");
+    $stmt = $conn->prepare("UPDATE Person SET status = 'active', Login_ID = ? WHERE UserID = ?");
     $stmt->bind_param("si", $newLoginID, $personID);
     $stmt->execute();
 
@@ -20,7 +20,7 @@ if ($action == 'accept') {
 
 } else if ($action == 'reject') {
     // Set to rejected so they can't log in
-    $conn->query("UPDATE Person SET status = 'rejected' WHERE PersonID = $personID");
+    $conn->query("UPDATE Person SET status = 'rejected' WHERE UserID = $personID");
     header("Location: farmer_dashboard.php?msg=UserRejected");
 }
 ?>
